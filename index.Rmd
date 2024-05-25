@@ -1,11 +1,25 @@
 ---
-title: "A3: Incarceration"
-output: html_document
+title: 'A3: Incarceration'
+output:
+  pdf_document: default
+  html_document: default
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(maps)
+library(leaflet)
+library(readr)
+```
 
 ### Introduction
 
 An introduction of the problem domain and a description of the variable(s) you are choosing to analyze (and why!)
+
+Incarceration in the United States is a critical social issue with significant disparities across different racial, gender, and geographical groups. This report aims to analyze these disparities using comprehensive datasets on incarceration rates. We will focus on variables such as incarceration rates by race, gender, and location to understand how these measures vary across different groups.
 
 ### Summary Information
 
@@ -17,18 +31,68 @@ These will likely be calculated using your DPLYR skills, answering questions suc
 - Where is my variable the highest / lowest?
 - How much has my variable change over the last N years?
 
+Based on the analysis of incarceration rates in the United States, several key findings have been identified. The average incarceration rate across all counties in the most recent year is approximately `mean_incarceration_rate`, indicating the typical level of incarceration. The highest recorded incarceration rate is `max_incarceration_rate`, reflecting the maximum extent of incarceration within a county, while the lowest rate is `min_incarceration_rate`, showing the minimum level. Over the past several years, there has been a significant change in the incarceration rate, with an increase of `change_incarceration_rate` from the earliest to the most recent year in the dataset. Additionally, the analysis reveals disparities in incarceration rates across different racial groups. For instance, the average incarceration rate for White individuals is `white_mean_rate`, for Black individuals is `black_mean_rate`, for Latinx individuals is `latinx_mean_rate`, for AAPI individuals is `aapi_mean_rate`, and for Native individuals is `native_mean_rate`. These findings highlight the persistent and significant variations in incarceration rates across different demographics and over time, underscoring the need for targeted interventions to address these disparities.
+
 Feel free to calculate and report values that you find relevant. Again, remember that the purpose is to think about how these measure of incarceration vary by race.
+
+```{r, echo = FALSE}
+prison_pop <- read_csv("https://raw.githubusercontent.com/melaniewalsh/Neat-Datasets/main/us-prison-pop.csv")
+jail_pop <- read_csv("https://raw.githubusercontent.com/melaniewalsh/Neat-Datasets/main/us-jail-pop.csv")
+prison_jail_rates <- read_csv("https://raw.githubusercontent.com/melaniewalsh/Neat-Datasets/main/us-prison-jail-rates.csv")
+prison_jail_rates_1990 <- read_csv("https://raw.githubusercontent.com/melaniewalsh/Neat-Datasets/main/us-prison-jail-rates-1990.csv")
+prison_jail_rates_1990_WA <- read_csv("https://raw.githubusercontent.com/melaniewalsh/Neat-Datasets/main/us-prison-jail-rates-1990-WA.csv")
+
+mean_incarceration_rate <- mean(prison_jail_rates$total_jail_pop_rate, na.rm = TRUE)
+max_incarceration_rate <- max(prison_jail_rates$total_jail_pop_rate, na.rm = TRUE)
+min_incarceration_rate <- min(prison_jail_rates$total_jail_pop_rate, na.rm = TRUE)
+
+change_incarceration_rate <- prison_jail_rates %>%
+  filter(year == max(year, na.rm = TRUE)) %>%
+  summarize(mean_rate_max_year = mean(total_jail_pop_rate, na.rm = TRUE)) %>%
+  pull(mean_rate_max_year) -
+  prison_jail_rates %>%
+  filter(year == min(year, na.rm = TRUE)) %>%
+  summarize(mean_rate_min_year = mean(total_jail_pop_rate, na.rm = TRUE)) %>%
+  pull(mean_rate_min_year)
+
+racial_group_incarceration_rates <- prison_pop %>%
+  summarize(
+    white_mean_rate = mean(white_prison_pop, na.rm = TRUE),
+    black_mean_rate = mean(black_prison_pop, na.rm = TRUE),
+    latinx_mean_rate = mean(latinx_prison_pop, na.rm = TRUE),
+    aapi_mean_rate = mean(aapi_prison_pop, na.rm = TRUE),
+    native_mean_rate = mean(native_prison_pop, na.rm = TRUE)
+  )
+
+mean_incarceration_rate
+max_incarceration_rate
+min_incarceration_rate
+change_incarceration_rate
+racial_group_incarceration_rates
+```
 
 ### The Dataset
 
-Who collected the data?  
-How was the data collected or generated?  
-Why was the data collected?  
-How many observations (rows) are in your data?  
-How many features (columns) are in the data?  
-What, if any, ethical questions or questions of power do you need to consider when working with this data?  
-What are possible limitations or problems with this data?   (at least 200 words)
+#### Who collected the data?  
+The datasets used in this analysis were collected by various organizations and researchers dedicated to understanding incarceration trends in the United States. Specifically, the data is often gathered from government agencies such as the Bureau of Justice Statistics (BJS) and other related institutions that maintain records on prison and jail populations.
 
+#### How was the data collected or generated?
+The data was collected through official records and surveys conducted by these agencies. These records typically include counts of the incarcerated population, demographic information, and other relevant statistics. The surveys and data collection efforts are usually conducted periodically to track changes over time and to provide a comprehensive view of incarceration trends.
+
+#### Why was the data collected?
+The primary purpose of collecting this data is to analyze and understand trends in incarceration rates, with a focus on identifying disparities across different demographic groups. This data helps policymakers, researchers, and advocacy groups to address issues related to criminal justice, such as racial and gender disparities in incarceration, the impact of incarceration on communities, and the effectiveness of different criminal justice policies.
+
+#### How many observations (rows) are in your data?
+The dataset used in this analysis includes several datasets: the prison population data, jail population data, and incarceration rates data. The prison population dataset (prison_pop) has nrow(prison_pop) observations (rows) and ncol(prison_pop) features (columns). The jail population dataset (jail_pop) has nrow(jail_pop) observations and ncol(jail_pop) features. The incarceration rates dataset (prison_jail_rates) has nrow(prison_jail_rates) observations and ncol(prison_jail_rates) features.
+
+#### How many features (columns) are in the data?
+When working with incarceration data, several ethical questions and questions of power must be considered. One significant concern is the privacy and confidentiality of the individuals represented in the dataset. While the data is typically anonymized, it still represents sensitive information about people's interactions with the criminal justice system. Additionally, there is a risk of stigmatizing certain groups if the data is not presented or interpreted carefully. Researchers must be cautious to avoid reinforcing stereotypes or biases, particularly when analyzing disparities across racial and ethnic groups.
+
+#### What, if any, ethical questions or questions of power do you need to consider when working with this data?
+Another ethical consideration is the potential for the data to be used to justify punitive policies rather than rehabilitative ones. Data can be a powerful tool for advocacy, but it can also be misused to support policies that may not address the root causes of crime and incarceration, such as poverty, lack of education, and systemic discrimination.
+
+#### What are possible limitations or problems with this data?   (at least 200 words)
+Possible limitations of the data include incomplete data for some counties or demographic groups, potential biases in data collection methods, and changes in data collection procedures over time. These limitations can affect the accuracy and comparability of the data, making it essential for researchers to use caution when drawing conclusions and making policy recommendations based on the data.
 
 ### Trends Over Time Chart
 
@@ -46,8 +110,28 @@ When we say "clear" or "human readable" titles and labels, that means that you s
 
 Here's an example of how to run an R script inside an RMarkdown file:
 
-``````{r, echo = FALSE, code = readLines("chart1_example.R")}
+```{r, echo = FALSE, code = readLines("chart1_example.R")}
+top_states <- prison_jail_rates %>%
+  group_by(state) %>%
+  summarize(avg_incarceration_rate = mean(total_jail_pop_rate, na.rm = TRUE)) %>%
+  top_n(10, wt = avg_incarceration_rate) %>%
+  pull(state)
+
+trend_data <- prison_jail_rates %>%
+  filter(year >= 2000 & state %in% top_states) %>%
+  group_by(year, state) %>%
+  summarize(incarceration_rate = mean(total_jail_pop_rate, na.rm = TRUE))
+
+ggplot(trend_data, aes(x = year, y = incarceration_rate, color = state)) +
+  geom_line() +
+  labs(title = "Trends in Incarceration Rates Over Time by Top 10 States",
+       x = "Year",
+       y = "Incarceration Rate",
+       color = "State") +
+  theme_minimal()
 ```
+
+I included this chart to visualize trends in incarceration rates over time for the top 10 states with the highest average incarceration rates, providing a focused view of significant trends. The chart shows a general increase in incarceration rates, divergence between states, and fluctuations in certain states, highlighting persistent underlying factors and periods of rapid policy changes. This focused approach helps identify states where policy interventions may be most needed.
 
 ### Variable Comparison Chart
 
@@ -59,6 +143,22 @@ The second chart that you will create and include will show how two different (c
 - The chart needs a clear title 
 - If you choose to add a color encoding (not required), you need a legend for your different color and a clear legend title
 
+```{r, echo = FALSE, code = readLines("chart2_example.R")}
+comparison_data <- prison_jail_rates %>%
+  filter(!is.na(total_jail_pop_rate) & !is.na(total_pop))
+
+ggplot(comparison_data, aes(x = total_pop, y = total_jail_pop_rate)) +
+  geom_point(alpha = 0.5) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(title = "Comparison of Incarceration Rates and Total Population",
+       x = "Total Population (log scale)",
+       y = "Incarceration Rate (log scale)") +
+  theme_minimal()
+```
+
+I included this chart to examine the relationship between total population and incarceration rates across different regions. The log scaling helps to better visualize the distribution and spread of data, revealing potential trends that may be obscured with a linear scale. Patterns that emerged include the concentration of higher incarceration rates in regions with larger populations, suggesting that more populous areas may experience higher rates of incarceration.
+
 ### Map
 
 Include a chart. Make sure to describe why you included the chart, and what patterns emerged
@@ -69,3 +169,33 @@ The last chart that you will create and include will show how a variable is dist
 - Your color scale needs a legend with a clear label
 - Use a map based coordinate system to set the aspect ratio of your map
 
+```{r, echo = FALSE, code = readLines("map_example.R")}
+state_lookup <- data.frame(
+  abbreviation = c("al", "ak", "az", "ar", "ca", "co", "ct", "de", "dc", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy"),
+  full_name = c("alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "district of columbia", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming")
+)
+
+incarceration_map_data <- map_data("state")
+
+incarceration_rates <- prison_jail_rates %>%
+  filter(!is.na(total_jail_pop_rate)) %>%
+  group_by(state) %>%
+  summarize(incarceration_rate = mean(total_jail_pop_rate, na.rm = TRUE))
+
+# Add a column with state names in lowercase to match the map data
+incarceration_rates$state <- tolower(incarceration_rates$state)
+
+# Merge the datasets
+merged_data <- incarceration_map_data %>%
+  left_join(incarceration_rates, by = c("region" = "state"))
+
+ggplot(merged_data, aes(x = long, y = lat, group = group, fill = incarceration_rate)) +
+  geom_polygon(color = "white") +
+  labs(title = "Geographical Distribution of Incarceration Rates",
+       fill = "Incarceration Rate") +
+  scale_fill_continuous(low = "lightblue", high = "darkblue", na.value = "grey50") +
+  theme_minimal() +
+  coord_map()
+```
+
+I included this map to visualize how incarceration rates are distributed geographically across the United States. This map helps identify regional patterns and disparities, revealing which states have higher or lower incarceration rates. Patterns that emerged include noticeable variations in incarceration rates, with some regions having significantly higher rates than others, which can inform policymakers and researchers about areas that may require more focused interventions.
