@@ -16,4 +16,3 @@ ggplot(trend_data, aes(x = year, y = incarceration_rate, color = state)) +
        y = "Incarceration Rate",
        color = "State") +
   theme_minimal()
-
